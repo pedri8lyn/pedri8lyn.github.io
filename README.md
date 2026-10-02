@@ -2,5 +2,9 @@
 
 Site : https://pedri8lyn.github.io
 
-- **Derniers posts** : le flux TikTok et Instagram de `@pedri8lyn_`, mis à jour automatiquement.
-- **Edits à la une** : colle les liens des posts à mettre en avant dans `posts.js`, puis commit et push. Le site se met à jour en environ une minute.
+- **TikTok** : les vidéos se mettent à jour toutes seules toutes les 4 heures (`.github/workflows/update-feed.yml` lance `scripts/update_tiktok.py`, qui écrit `data/tiktok.json` et télécharge les miniatures dans `assets/covers/`). On peut aussi lancer la mise à jour à la main depuis l'onglet **Actions** du dépôt → « Mise à jour des vidéos TikTok » → **Run workflow**.
+- **Instagram** : Instagram bloque la récupération automatique. Colle les liens des reels dans `data/instagram.json` (champ `posts`, le plus récent en premier). Chaque reel est intégré directement sur le site.
+
+Tester en local : `python3 -m http.server` puis ouvrir http://localhost:8000.
+
+Photo de Pedri : Bryan Berlin, CC BY-SA 4.0, via Wikimedia Commons (détourée).
