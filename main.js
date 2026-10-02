@@ -8,6 +8,40 @@
 
   $("#year").textContent = new Date().getFullYear();
 
+  // ---------- performance mode ----------
+  // "lite" = machines plus modestes : pas de particules, pas de grain, pas de flou, scroll natif.
+  // Forcer avec ?lite ou ?full dans l'URL.
+  const q = new URLSearchParams(location.search);
+  let lite = q.has("lite") || (!q.has("full") && ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4));
+  if (lite) document.documentElement.classList.add("lite");
+  const setLite = () => {
+    lite = true;
+    document.documentElement.classList.add("lite");
+    if (lenis) { lenis.destroy(); lenis = null; }
+    ctx.clearRect(0, 0, W, H);
+  };
+  // mesure réelle pendant l'écran de chargement : si on tombe sous ~45 fps, on allège
+  const probeFps = () => new Promise((res) => {
+    if (lite || q.has("full")) return res();
+    let n = 0, t0 = performance.now(), last = t0, slow = 0;
+    const f = (t) => {
+      if (t - last > 28) slow++;
+      last = t; n++;
+      if (t - t0 < 1000) return requestAnimationFrame(f);
+      if (n < 45 || slow > 8) setLite();
+      res();
+    };
+    requestAnimationFrame(f);
+  });
+
+  // ---------- visibility flags (on ne calcule rien pour ce qui est hors écran) ----------
+  const onScreen = new Map();
+  const visIO = new IntersectionObserver((entries) => {
+    for (const en of entries) { onScreen.set(en.target, en.isIntersecting); en.target.classList.toggle("is-off", !en.isIntersecting); }
+  });
+  $$(".hero, .feed, .marquee").forEach((el) => { onScreen.set(el, true); visIO.observe(el); });
+  const visible = (sel) => onScreen.get($(sel)) !== false;
+
   // ---------- helpers ----------
   const fmt = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
   const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -23,20 +57,20 @@
 
   // ---------- smooth scroll ----------
   let lenis = null;
-  if (window.Lenis && !reduce) {
+  if (window.Lenis && !reduce && !lite) {
     lenis = new Lenis({ lerp: 0.09, smoothWheel: true });
     if (hasGsap) {
       lenis.on("scroll", ScrollTrigger.update);
-      gsap.ticker.add((t) => lenis.raf(t * 1000));
+      gsap.ticker.add((t) => lenis?.raf(t * 1000));
       gsap.ticker.lagSmoothing(0);
     } else {
-      const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
+      const raf = (t) => { if (!lenis) return; lenis.raf(t); requestAnimationFrame(raf); };
       requestAnimationFrame(raf);
     }
     lenis.stop();
     $$('a[href^="#"]').forEach((a) => a.addEventListener("click", (e) => {
       const target = $(a.getAttribute("href"));
-      if (!target) return;
+      if (!target || !lenis) return;
       e.preventDefault();
       lenis.scrollTo(target, { offset: a.getAttribute("href") === "#top" ? 0 : -40, duration: 1.4 });
     }));
@@ -44,23 +78,35 @@
 
   // ---------- particles ----------
   const canvas = $("#fx");
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
   let W, H, dpr, parts = [];
   const pointer = { x: -999, y: -999, nx: 0, ny: 0 };
   const colors = ["242,194,0", "226,21,95", "42,123,255", "246,242,234"];
   const resize = () => {
-    dpr = Math.min(devicePixelRatio || 1, 2);
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
     W = canvas.width = innerWidth * dpr; H = canvas.height = innerHeight * dpr;
-    const n = Math.round(Math.min(90, (innerWidth * innerHeight) / 16000));
+    const n = Math.round(Math.min(60, (innerWidth * innerHeight) / 22000));
     parts = Array.from({ length: n }, () => ({
       x: Math.random() * W, y: Math.random() * H, r: (Math.random() * 1.8 + .4) * dpr,
       vx: (Math.random() - .5) * .25 * dpr, vy: (-Math.random() * .35 - .05) * dpr,
       c: colors[Math.floor(Math.random() * colors.length)], a: Math.random() * .6 + .2, z: Math.random() * .8 + .2,
     }));
   };
+  // halo pré-dessiné une fois par couleur : bien moins coûteux que shadowBlur à chaque image
+  const sprites = Object.fromEntries(colors.map((c) => {
+    const sc = document.createElement("canvas"); sc.width = sc.height = 32;
+    const g = sc.getContext("2d"), grd = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    grd.addColorStop(0, `rgba(${c},1)`); grd.addColorStop(.25, `rgba(${c},.8)`); grd.addColorStop(1, `rgba(${c},0)`);
+    g.fillStyle = grd; g.fillRect(0, 0, 32, 32);
+    return [c, sc];
+  }));
   resize();
-  addEventListener("resize", resize);
+  let resizeT;
+  addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(resize, 150); });
   const drawFx = () => {
+    if (lite || reduce) return;
+    requestAnimationFrame(drawFx);
+    if (document.hidden) return;
     ctx.clearRect(0, 0, W, H);
     for (const p of parts) {
       const dx = p.x - pointer.x * dpr, dy = p.y - pointer.y * dpr, d2 = dx * dx + dy * dy, R = 140 * dpr;
@@ -69,10 +115,11 @@
       if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
       if (p.x < -10) p.x = W + 10; else if (p.x > W + 10) p.x = -10;
       const px = p.x + pointer.nx * 20 * p.z * dpr, py = p.y + pointer.ny * 14 * p.z * dpr;
-      ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${p.c},${p.a})`; ctx.shadowColor = `rgba(${p.c},.8)`; ctx.shadowBlur = 8 * dpr; ctx.fill();
+      const size = p.r * 6;
+      ctx.globalAlpha = p.a;
+      ctx.drawImage(sprites[p.c], px - size / 2, py - size / 2, size, size);
     }
-    if (!reduce) requestAnimationFrame(drawFx);
+    ctx.globalAlpha = 1;
   };
   drawFx();
 
@@ -86,13 +133,14 @@
     cx = e.clientX; cy = e.clientY;
   });
   if (fine) {
+    let running = false;
     const loop = () => {
       rx += (cx - rx) * .18; ry += (cy - ry) * .18;
-      dot.style.transform = `translate(${cx}px, ${cy}px) translate(-50%, -50%)`;
-      ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
-      requestAnimationFrame(loop);
+      dot.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`;
+      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`;
+      if (Math.abs(cx - rx) + Math.abs(cy - ry) > .3) requestAnimationFrame(loop); else running = false;
     };
-    loop();
+    addEventListener("pointermove", () => { if (!running) { running = true; requestAnimationFrame(loop); } });
     document.addEventListener("pointerover", (e) => {
       const play = e.target.closest("[data-cursor=play]");
       cursor.classList.toggle("is-play", !!play);
@@ -130,6 +178,7 @@
   if (hasGsap && !reduce) {
     const setters = depthEls.map((el) => ({ d: +el.dataset.depth, x: gsap.quickTo(el, "x", { duration: 1.2, ease: "power3.out" }), y: gsap.quickTo(el, "y", { duration: 1.2, ease: "power3.out" }) }));
     addEventListener("pointermove", (e) => {
+      if (!visible(".hero")) return;
       const nx = e.clientX / innerWidth - .5, ny = e.clientY / innerHeight - .5;
       for (const s of setters) { s.x(-nx * 60 * s.d); s.y(-ny * 40 * s.d); }
     });
@@ -179,15 +228,18 @@
     // marquee driven by scroll velocity
     const track = $("#marquee");
     track.innerHTML += track.innerHTML + track.innerHTML;
-    const loopW = () => track.scrollWidth / 3;
+    let w = track.scrollWidth / 3;
+    addEventListener("resize", () => { w = track.scrollWidth / 3; });
+    document.fonts?.ready.then(() => { w = track.scrollWidth / 3; });
+    const setX = gsap.quickSetter(track, "x", "px");
     let xPos = 0, dir = -1;
     const speed = { v: 1 };
     gsap.ticker.add(() => {
+      if (!visible(".marquee")) return;
       xPos += dir * speed.v * 1.2;
-      const w = loopW();
       if (xPos <= -w) xPos += w;
       if (xPos > 0) xPos -= w;
-      gsap.set(track, { x: xPos });
+      setX(xPos);
     });
     ScrollTrigger.create({
       onUpdate: (self) => {
@@ -257,7 +309,7 @@
     gsap.to(prog, { v: 85, duration: 1.4, ease: "power2.out", onUpdate: () => { $("#loaderCount").textContent = Math.round(prog.v); $("#loaderBar").style.width = `${prog.v}%`; } });
   }
 
-  Promise.all([imgReady, minTime]).then(() => {
+  Promise.all([imgReady, minTime, probeFps()]).then(() => {
     const finish = () => {
       intro();
       scrollFx();
