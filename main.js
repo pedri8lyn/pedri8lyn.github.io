@@ -10,35 +10,7 @@
 
   // ---------- helpers ----------
   const fmt = new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 });
-  const rtf = new Intl.RelativeTimeFormat("fr", { numeric: "auto" });
-  const ago = (ts) => {
-    if (!ts) return "";
-    const s = ts - Date.now() / 1000;
-    const units = [["year", 31536000], ["month", 2592000], ["week", 604800], ["day", 86400], ["hour", 3600], ["minute", 60]];
-    for (const [u, sec] of units) if (Math.abs(s) >= sec) return rtf.format(Math.round(s / sec), u);
-    return "à l'instant";
-  };
   const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const shortAgo = (ts) => {
-    if (!ts) return "";
-    const s = Date.now() / 1000 - ts;
-    if (s < 3600) return "à l'instant";
-    if (s < 86400) return `il y a ${Math.round(s / 3600)} h`;
-    if (s < 604800) return `il y a ${Math.round(s / 86400)} j`;
-    if (s < 2592000) return `il y a ${Math.round(s / 604800)} sem.`;
-    return `il y a ${Math.round(s / 2592000)} mois`;
-  };
-  // hashtags / mentions in gold — split first so HTML entities never get matched
-  const richText = (t) => t.trim().split(/([#@][\p{L}\p{N}_.]+)/u)
-    .map((part, i) => (i % 2 ? `<span class="tag">${esc(part)}</span>` : esc(part))).join("");
-  const icons = {
-    play: '<svg viewBox="0 0 24 24"><path d="M6 4l15 8-15 8z"/></svg>',
-    eye: '<svg viewBox="0 0 24 24"><path d="M12 5C6 5 2 12 2 12s4 7 10 7 10-7 10-7-4-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z"/></svg>',
-    heart: '<svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11.2A4.8 4.8 0 0112 6a4.8 4.8 0 018 3.8C20 15.8 12 21 12 21z"/></svg>',
-  };
-  const tiktokPlayer = (id, autoplay) =>
-    `<iframe src="https://www.tiktok.com/player/v1/${id}?autoplay=${autoplay ? 1 : 0}&loop=1&rel=0&music_info=1&description=0&native_context_menu=0"
-      allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen title="Vidéo TikTok de pedri8lyn_"></iframe>`;
 
   // split text into chars / words for animation
   $$("[data-split]").forEach((el) => {
@@ -48,10 +20,6 @@
   $$("[data-split-words]").forEach((el) => {
     el.innerHTML = el.textContent.trim().split(/\s+/).map((w) => `<span class="word-wrap"><span class="word">${esc(w)}</span></span>`).join(" ");
   });
-
-  // ---------- data ----------
-  const getJSON = (url) => fetch(url, { cache: "no-cache" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  const dataReady = Promise.all([getJSON("data/tiktok.json"), getJSON("data/instagram.json")]);
 
   // ---------- smooth scroll ----------
   let lenis = null;
@@ -173,140 +141,29 @@
   }
 
   // ---------- counters ----------
-  const countTo = (el, value, delay = 0) => {
-    if (!hasGsap || reduce) { el.textContent = fmt.format(value); return; }
+  const countTo = (el, value, delay = 0, prefix = "") => {
+    if (!hasGsap || reduce) { el.textContent = prefix + fmt.format(value); return; }
     const o = { v: 0 };
-    gsap.to(o, { v: value, duration: 2, delay, ease: "power3.out", onUpdate: () => { el.textContent = fmt.format(Math.round(o.v)); } });
+    gsap.to(o, { v: value, duration: 2, delay, ease: "power3.out", onUpdate: () => { el.textContent = prefix + fmt.format(Math.round(o.v)); } });
   };
-  const statsHTML = (v) =>
-    `<div class="stat"><b data-num="${v.views}">${fmt.format(v.views)}</b><span>vues</span></div>
-     <div class="stat"><b data-num="${v.likes}">${fmt.format(v.likes)}</b><span>likes</span></div>
-     <div class="stat"><b data-num="${v.comments}">${fmt.format(v.comments)}</b><span>commentaires</span></div>`;
-
-  // ---------- render TikTok ----------
-  let videos = [];
-  const grid = $("#tiktokGrid");
-  const moreBtn = $("#moreBtn");
-  const PAGE = 8;
-  let shown = 0;
-
-  const cardHTML = (v, i) => `
-    <img class="card__img" src="${v.cover || ""}" alt="" loading="lazy">
-    <div class="card__shine"></div>
-    <div class="card__top">${i === 0 ? '<span class="pill pill--new">Nouveau</span>' : `<span class="pill">${shortAgo(v.timestamp)}</span>`}${v.duration ? `<span class="pill">0:${String(v.duration).padStart(2, "0")}</span>` : ""}</div>
-    <span class="card__play">${icons.play}</span>
-    <div class="card__body">
-      <p class="card__desc">${richText(v.description) || "Edit Pedri"}</p>
-      <div class="card__meta"><span>${icons.eye}${fmt.format(v.views)}</span><span>${icons.heart}${fmt.format(v.likes)}</span></div>
-    </div>`;
-
-  const renderMore = () => {
-    const batch = videos.slice(shown, shown + PAGE);
-    const els = batch.map((v, k) => {
-      const i = shown + k;
-      const el = document.createElement("button");
-      el.className = "card";
-      el.type = "button";
-      el.dataset.cursor = "play";
-      el.setAttribute("aria-label", `Lire la vidéo : ${v.description.slice(0, 80)}`);
-      el.innerHTML = cardHTML(v, i);
-      el.addEventListener("click", () => openLightbox(i, el));
-      grid.appendChild(el);
-      bindTilt(el, 14);
-      return el;
-    });
-    shown += batch.length;
-    moreBtn.hidden = shown >= videos.length;
-    if (hasGsap && !reduce) {
-      gsap.set(els, { opacity: 0, y: 80, rotateX: -25, transformOrigin: "50% 0%" });
-      ScrollTrigger.batch(els, {
-        start: "top 92%", once: true,
-        onEnter: (b) => gsap.to(b, { opacity: 1, y: 0, rotateX: 0, duration: 1.1, ease: "power4.out", stagger: .08 }),
-      });
-      ScrollTrigger.refresh();
-    }
+  // ---------- live embeds (loaded by the visitor's browser, so always up to date) ----------
+  const markReady = (box) => box.classList.add("is-ready");
+  const igBox = $("#igLive"), igFrame = $("#igLive iframe");
+  const ttBox = $("#ttLive");
+  const loadInstagram = () => {
+    if (igFrame.src) return;
+    igFrame.addEventListener("load", () => setTimeout(() => markReady(igBox), 400), { once: true });
+    igFrame.src = igFrame.dataset.src;
   };
-  moreBtn.addEventListener("click", renderMore);
-
-  const renderLatest = (v) => {
-    const screen = $("#latestScreen");
-    screen.innerHTML = `<img src="${v.cover || ""}" alt="">`;
-    $("#latestDesc").innerHTML = richText(v.description);
-    $("#latestStats").innerHTML = statsHTML(v);
-    $("#latestLink").href = v.url;
-    // the real TikTok player is injected when the phone comes into view
-    const io = new IntersectionObserver(([en]) => {
-      if (!en.isIntersecting) return;
-      screen.innerHTML = tiktokPlayer(v.id, false);
-      io.disconnect();
-    }, { rootMargin: "200px" });
-    io.observe(screen);
-  };
-
-  // ---------- render Instagram ----------
-  const renderInstagram = (ig) => {
-    const box = $("#igGrid");
-    const posts = (ig?.posts || []).map((u) => u.match(/instagram\.com\/(?:[\w.]+\/)?(p|reel|reels|tv)\/([\w-]+)/)).filter(Boolean);
-    if (!posts.length) {
-      box.innerHTML = `<div class="empty">
-        <div class="empty__icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" class="fill"/></svg></div>
-        <div><h3>Les reels arrivent bientôt</h3><p>En attendant, retrouve tous les edits directement sur Instagram.</p></div>
-        <a class="btn btn--primary magnetic" href="https://www.instagram.com/pedri8lyn_/" target="_blank" rel="noopener"><span>@pedri8lyn_</span></a></div>`;
-      $$(".magnetic", box).forEach(bindMagnetic);
-      return;
-    }
-    box.innerHTML = posts.map(([, type, code]) => `<div class="card card--ig">
-      <iframe src="https://www.instagram.com/${type === "reels" ? "reel" : type}/${code}/embed/" loading="lazy" scrolling="no" allowtransparency="true" allow="autoplay; encrypted-media" title="Post Instagram de pedri8lyn_"></iframe></div>`).join("");
-  };
-
-  // ---------- lightbox ----------
-  const lb = $("#lightbox");
-  let current = 0, lastFocus = null;
-  const showVideo = (i, dir = 0) => {
-    current = (i + videos.length) % videos.length;
-    const v = videos[current];
-    $("#lbScreen").innerHTML = tiktokPlayer(v.id, true);
-    $("#lbDate").textContent = ago(v.timestamp);
-    $("#lbDesc").innerHTML = richText(v.description);
-    $("#lbStats").innerHTML = statsHTML(v);
-    $("#lbLink").href = v.url;
-    if (hasGsap && dir) gsap.fromTo(".phone--lb", { x: 80 * dir, opacity: 0, rotateY: -20 * dir }, { x: 0, opacity: 1, rotateY: 0, duration: .7, ease: "power3.out" });
-  };
-  const openLightbox = (i, fromEl) => {
-    lastFocus = fromEl;
-    lb.hidden = false;
-    lenis?.stop();
-    document.body.style.overflow = "hidden";
-    showVideo(i);
-    if (hasGsap) {
-      gsap.fromTo(lb, { opacity: 0 }, { opacity: 1, duration: .35 });
-      gsap.fromTo(".phone--lb", { scale: .7, y: 80, rotateX: 25, opacity: 0 }, { scale: 1, y: 0, rotateX: 0, opacity: 1, duration: .9, ease: "expo.out" });
-      gsap.fromTo(".lightbox__meta > *", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .7, stagger: .07, delay: .2, ease: "power3.out" });
-    }
-    $("#lbClose").focus();
-  };
-  const closeLightbox = () => {
-    const done = () => { lb.hidden = true; $("#lbScreen").innerHTML = ""; lenis?.start(); document.body.style.overflow = ""; lastFocus?.focus(); };
-    if (hasGsap) gsap.to(lb, { opacity: 0, duration: .3, onComplete: done }); else done();
-  };
-  $("#lbClose").addEventListener("click", closeLightbox);
-  $("#lbPrev").addEventListener("click", () => showVideo(current - 1, -1));
-  $("#lbNext").addEventListener("click", () => showVideo(current + 1, 1));
-  lb.addEventListener("click", (e) => { if (e.target === lb) closeLightbox(); });
-  addEventListener("keydown", (e) => {
-    if (lb.hidden) return;
-    if (e.key === "Escape") closeLightbox();
-    if (e.key === "ArrowRight") showVideo(current + 1, 1);
-    if (e.key === "ArrowLeft") showVideo(current - 1, -1);
-  });
-  let touchX = null;
-  lb.addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; }, { passive: true });
-  lb.addEventListener("touchend", (e) => {
-    if (touchX == null) return;
-    const dx = e.changedTouches[0].clientX - touchX;
-    if (Math.abs(dx) > 60) showVideo(current + (dx < 0 ? 1 : -1), dx < 0 ? 1 : -1);
-    touchX = null;
-  });
+  new IntersectionObserver(([en], io) => { if (en.isIntersecting) { loadInstagram(); io.disconnect(); } }, { rootMargin: "600px" }).observe(igBox);
+  // embed.js injects an iframe into the blockquote — wait for it to load
+  new MutationObserver((_, mo) => {
+    const f = ttBox.querySelector("iframe");
+    if (!f) return;
+    mo.disconnect();
+    f.addEventListener("load", () => setTimeout(() => markReady(ttBox), 600), { once: true });
+  }).observe(ttBox, { childList: true, subtree: true });
+  setTimeout(() => { markReady(ttBox); markReady(igBox); }, 12000);
 
   // ---------- scroll animations ----------
   const scrollFx = () => {
@@ -344,13 +201,17 @@
     $$("[data-split-words]").forEach((h) => {
       gsap.from($$(".word", h), { yPercent: 110, rotate: 6, duration: 1.1, ease: "power4.out", stagger: .06, scrollTrigger: { trigger: h, start: "top 88%" } });
     });
-    $$(".section .eyebrow, .section__sub, .latest__desc, .latest .stats, .latest .btn, .about__body p, .about__links").forEach((el) => {
+    $$(".section .eyebrow, .about__body p, .about__links").forEach((el) => {
       gsap.from(el, { y: 30, opacity: 0, duration: 1, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 92%" } });
     });
 
-    // latest phone: rotates into place while scrolling
-    gsap.fromTo("#latestPhone", { rotateY: -32, rotateX: 12, rotateZ: -6, y: 80 },
-      { rotateY: 10, rotateX: -4, rotateZ: 2, y: -40, ease: "none", scrollTrigger: { trigger: ".latest", start: "top bottom", end: "bottom top", scrub: 1 } });
+    // live frames swing into place in 3D
+    $$(".feed__frame").forEach((f, i) => {
+      const side = f.closest(".feed--reverse") ? -1 : 1;
+      gsap.fromTo(f, { rotateY: -28 * side, rotateX: 14, y: 120, opacity: 0, transformPerspective: 1400 },
+        { rotateY: 0, rotateX: 0, y: 0, opacity: 1, ease: "power3.out", scrollTrigger: { trigger: f, start: "top 95%", end: "top 35%", scrub: 1 } });
+    });
+    $$(".feed__info").forEach((el) => gsap.from($$(".feed__text, .feed__actions", el), { y: 40, opacity: 0, duration: 1, stagger: .1, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 80%" } }));
 
     // big TikTok / Instagram headings scale
     $$(".h2--big").forEach((h) => gsap.fromTo(h, { scale: .8, letterSpacing: "0em" }, { scale: 1, letterSpacing: "-0.05em", ease: "none", scrollTrigger: { trigger: h, start: "top bottom", end: "top 40%", scrub: true } }));
@@ -396,28 +257,12 @@
     gsap.to(prog, { v: 85, duration: 1.4, ease: "power2.out", onUpdate: () => { $("#loaderCount").textContent = Math.round(prog.v); $("#loaderBar").style.width = `${prog.v}%`; } });
   }
 
-  Promise.all([dataReady, imgReady, minTime]).then(([[tt, ig]]) => {
-    if (tt?.videos?.length) {
-      videos = tt.videos;
-      if (tt.name) $("#displayName").textContent = tt.name;
-      renderLatest(videos[0]);
-      renderMore();
-      const total = videos.reduce((s, v) => s + (v.views || 0), 0);
-      $$("[data-count]").forEach((el) => { el.dataset.target = el.dataset.count === "videos" ? videos.length : total; });
-    } else {
-      grid.innerHTML = `<div class="empty"><div></div><div><h3>Vidéos indisponibles</h3><p>Impossible de charger les vidéos pour le moment.</p></div>
-        <a class="btn btn--primary" href="https://www.tiktok.com/@pedri8lyn_" target="_blank" rel="noopener"><span>Voir sur TikTok</span></a></div>`;
-    }
-    renderInstagram(ig);
-
+  Promise.all([imgReady, minTime]).then(() => {
     const finish = () => {
       intro();
       scrollFx();
-      $$("[data-count]").forEach((el) => countTo(el, +(el.dataset.target || 0), 1.6));
-      if (hasGsap) {
-        $$(".stats b[data-num]").forEach((b) => ScrollTrigger.create({ trigger: b, start: "top 95%", once: true, onEnter: () => countTo(b, +b.dataset.num) }));
-        ScrollTrigger.refresh();
-      }
+      $$("[data-count]").forEach((el) => countTo(el, +el.dataset.count, 1.6, "+"));
+      if (hasGsap) ScrollTrigger.refresh();
     };
     if (hasGsap && !reduce) {
       gsap.to(prog, { v: 100, duration: .4, overwrite: true, onUpdate: () => { $("#loaderCount").textContent = Math.round(prog.v); $("#loaderBar").style.width = `${prog.v}%`; }, onComplete: finish });

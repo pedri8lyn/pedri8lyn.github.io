@@ -32,7 +32,6 @@
   <header class="nav" id="nav">
     <a href="#top" class="nav__logo magnetic"><span class="nav__eight">8</span><span>pedri8lyn_</span></a>
     <nav class="nav__links">
-      <a href="#latest" class="magnetic">Dernier edit</a>
       <a href="#tiktok" class="magnetic">TikTok</a>
       <a href="#instagram" class="magnetic">Instagram</a>
     </nav>
@@ -50,18 +49,18 @@
         <div class="hero__photo" data-depth="0.65">
           <img src="assets/pedri.webp" alt="Pedri" width="900" height="1300">
         </div>
-        <div class="chip chip--a" data-depth="1.1"><b data-count="videos">0</b><span>edits publiés</span></div>
-        <div class="chip chip--b" data-depth="1.4"><b data-count="views">0</b><span>vues récentes</span></div>
+        <div class="chip chip--a" data-depth="1.1"><b data-count="6000">0</b><span>abonnés TikTok</span></div>
+        <div class="chip chip--b" data-depth="1.4"><b data-count="890000">0</b><span>j'aime</span></div>
         <div class="chip chip--c" data-depth="0.9"><span class="chip__live"></span><span>Nouvel edit</span></div>
       </div>
 
       <div class="hero__text">
-        <p class="eyebrow hero__eyebrow"><span class="pulse"></span><span id="displayName">pedri's version⁸</span> · fan edits</p>
+        <p class="eyebrow hero__eyebrow"><span class="pulse"></span>pedri's version⁸ · fan edits</p>
         <h1 class="hero__title" data-split>pedri8lyn_</h1>
         <p class="hero__sub">Le numéro 8 en montage : <em>transitions, slow-mo, sound design</em>.
-          Toutes les vidéos TikTok et Instagram du compte, à regarder ici.</p>
+          Les dernières vidéos TikTok et Instagram du compte, en direct ici.</p>
         <div class="hero__cta">
-          <a class="btn btn--primary magnetic" href="#latest"><span>Regarder les edits</span></a>
+          <a class="btn btn--primary magnetic" href="#tiktok"><span>Regarder les edits</span></a>
           <a class="social magnetic" href="https://www.instagram.com/pedri8lyn_/" target="_blank" rel="noopener" aria-label="Instagram">
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" class="fill"/></svg>
           </a>
@@ -81,41 +80,44 @@
       </div>
     </div>
 
-    <!-- LATEST -->
-    <section class="section latest" id="latest">
-      <div class="latest__player">
-        <div class="phone" id="latestPhone">
-          <div class="phone__screen" id="latestScreen"></div>
-        </div>
-        <div class="latest__shadow"></div>
-      </div>
-      <div class="latest__info">
-        <p class="eyebrow">Dernier edit · TikTok</p>
-        <h2 class="h2" data-split-words>Le plus récent, en direct</h2>
-        <p class="latest__desc" id="latestDesc"></p>
-        <div class="stats" id="latestStats"></div>
-        <a class="btn btn--ghost magnetic" id="latestLink" href="https://www.tiktok.com/@pedri8lyn_" target="_blank" rel="noopener"><span>Voir sur TikTok</span></a>
-      </div>
-    </section>
-
-    <!-- TIKTOK GRID -->
-    <section class="section" id="tiktok">
-      <div class="section__head">
-        <p class="eyebrow">Toutes les vidéos</p>
+    <!-- TIKTOK LIVE -->
+    <section class="section feed" id="tiktok">
+      <div class="feed__info">
+        <p class="eyebrow"><span class="pulse"></span> En direct de TikTok</p>
         <h2 class="h2 h2--big" data-split-words>TikTok</h2>
-        <p class="section__sub">Clique sur une vidéo pour la lancer ici, sans quitter le site.</p>
+        <p class="feed__text">Les dernières vidéos de <strong>@pedri8lyn_</strong>, directement ici. Clique sur une vidéo pour la lancer.</p>
+        <div class="feed__actions">
+          <a class="btn btn--primary magnetic" href="https://www.tiktok.com/@pedri8lyn_" target="_blank" rel="noopener"><span>S'abonner sur TikTok</span></a>
+        </div>
       </div>
-      <div class="grid" id="tiktokGrid"></div>
-      <div class="more"><button class="btn btn--ghost magnetic" id="moreBtn" hidden><span>Afficher plus</span></button></div>
+      <div class="feed__frame feed__frame--tt">
+        <div class="frame__bar"><span class="frame__avatar">8</span><div><b>pedri8lyn_</b><small>TikTok · dernières vidéos</small></div><span class="frame__live">Live</span></div>
+        <div class="live live--tt" id="ttLive">
+          <blockquote class="tiktok-embed" cite="https://www.tiktok.com/@pedri8lyn_" data-unique-id="pedri8lyn_" data-embed-type="creator" style="max-width:780px;min-width:288px;margin:0;">
+            <section><a target="_blank" rel="noopener" href="https://www.tiktok.com/@pedri8lyn_?refer=creator_embed">@pedri8lyn_</a></section>
+          </blockquote>
+          <div class="live__loading"><span></span>Chargement des vidéos…</div>
+        </div>
+      </div>
     </section>
 
-    <!-- INSTAGRAM -->
-    <section class="section" id="instagram">
-      <div class="section__head">
-        <p class="eyebrow">Reels</p>
+    <!-- INSTAGRAM LIVE -->
+    <section class="section feed feed--reverse" id="instagram">
+      <div class="feed__info">
+        <p class="eyebrow"><span class="pulse"></span> En direct d'Instagram</p>
         <h2 class="h2 h2--big" data-split-words>Instagram</h2>
+        <p class="feed__text">Les derniers posts et reels de <strong>@pedri8lyn_</strong>, mis à jour automatiquement.</p>
+        <div class="feed__actions">
+          <a class="btn btn--primary magnetic" href="https://www.instagram.com/pedri8lyn_/" target="_blank" rel="noopener"><span>Suivre sur Instagram</span></a>
+        </div>
       </div>
-      <div class="grid grid--ig" id="igGrid"></div>
+      <div class="feed__frame feed__frame--ig">
+        <div class="frame__bar"><span class="frame__avatar frame__avatar--ig">8</span><div><b>pedri8lyn_</b><small>Instagram · derniers posts</small></div><span class="frame__live">Live</span></div>
+        <div class="live live--ig" id="igLive">
+          <iframe data-src="https://www.instagram.com/pedri8lyn_/embed/" title="Derniers posts Instagram de pedri8lyn_" scrolling="no" allowtransparency="true"></iframe>
+          <div class="live__loading"><span></span>Chargement des posts…</div>
+        </div>
+      </div>
     </section>
 
     <!-- ABOUT -->
@@ -143,25 +145,10 @@
       <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noopener">CC BY-SA 4.0</a>, via Wikimedia Commons (détourée).</p>
   </footer>
 
-  <!-- LIGHTBOX -->
-  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Lecteur vidéo" hidden>
-    <button class="lightbox__close" id="lbClose" aria-label="Fermer">✕</button>
-    <button class="lightbox__nav lightbox__nav--prev" id="lbPrev" aria-label="Vidéo précédente">‹</button>
-    <div class="lightbox__stage">
-      <div class="phone phone--lb"><div class="phone__screen" id="lbScreen"></div></div>
-      <div class="lightbox__meta">
-        <p class="lightbox__date" id="lbDate"></p>
-        <p class="lightbox__desc" id="lbDesc"></p>
-        <div class="stats" id="lbStats"></div>
-        <a class="btn btn--ghost" id="lbLink" target="_blank" rel="noopener"><span>Ouvrir sur TikTok</span></a>
-      </div>
-    </div>
-    <button class="lightbox__nav lightbox__nav--next" id="lbNext" aria-label="Vidéo suivante">›</button>
-  </div>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script async src="https://www.tiktok.com/embed.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

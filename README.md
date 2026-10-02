@@ -2,8 +2,7 @@
 
 Site : https://pedri8lyn.github.io
 
-- **TikTok** : les vidéos se mettent à jour toutes seules toutes les 4 heures (`.github/workflows/update-feed.yml` lance `scripts/update_tiktok.py`, qui écrit `data/tiktok.json` et télécharge les miniatures dans `assets/covers/`). On peut aussi lancer la mise à jour à la main depuis l'onglet **Actions** du dépôt → « Mise à jour des vidéos TikTok » → **Run workflow**.
-- **Instagram** : Instagram bloque la récupération automatique. Colle les liens des reels dans `data/instagram.json` (champ `posts`, le plus récent en premier). Chaque reel est intégré directement sur le site.
+Les sections TikTok et Instagram utilisent les intégrations officielles des deux plateformes : c'est le navigateur du visiteur qui charge les derniers posts, donc le site est toujours à jour sans rien faire. Leurs en-têtes blancs sont masqués par CSS (`--crop` dans `style.css`) pour garder le design du site.
 
 Tester en local : `python3 -m http.server` puis ouvrir http://localhost:8000.
 
