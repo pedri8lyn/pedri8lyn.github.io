@@ -9,16 +9,19 @@
   $("#year").textContent = new Date().getFullYear();
 
   // ---------- performance mode ----------
-  // "lite" = machines plus modestes : pas de particules, pas de grain, pas de flou, scroll natif.
+  // "lite" = machines plus modestes : moins d'étoiles, pas de grain, pas de flou, scroll natif.
+  // Le critère matériel ne vaut que pour les ordinateurs (les téléphones annoncent souvent 4 cœurs / 4 Go
+  // tout en étant rapides) ; sur téléphone, seule la mesure de fps compte.
   // Forcer avec ?lite ou ?full dans l'URL.
   const q = new URLSearchParams(location.search);
-  let lite = q.has("lite") || (!q.has("full") && ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4));
+  const touch = matchMedia("(pointer: coarse)").matches;
+  let lite = q.has("lite") || (!q.has("full") && !touch && ((navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4));
   if (lite) document.documentElement.classList.add("lite");
   const setLite = () => {
     lite = true;
     document.documentElement.classList.add("lite");
     if (lenis) { lenis.destroy(); lenis = null; }
-    ctx.clearRect(0, 0, W, H);
+    resize();
   };
   // mesure réelle pendant l'écran de chargement : si on tombe sous ~45 fps, on allège
   const probeFps = () => new Promise((res) => {
@@ -85,7 +88,7 @@
   const resize = () => {
     dpr = Math.min(devicePixelRatio || 1, 1.5);
     W = canvas.width = innerWidth * dpr; H = canvas.height = innerHeight * dpr;
-    const n = Math.round(Math.min(60, (innerWidth * innerHeight) / 22000));
+    const n = Math.round(lite ? Math.min(22, (innerWidth * innerHeight) / 30000) : Math.max(28, Math.min(60, (innerWidth * innerHeight) / 22000)));
     parts = Array.from({ length: n }, () => ({
       x: Math.random() * W, y: Math.random() * H, r: (Math.random() * 1.8 + .4) * dpr,
       vx: (Math.random() - .5) * .25 * dpr, vy: (-Math.random() * .35 - .05) * dpr,
@@ -104,7 +107,7 @@
   let resizeT;
   addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(resize, 150); });
   const drawFx = () => {
-    if (lite || reduce) return;
+    if (reduce) return;
     requestAnimationFrame(drawFx);
     if (document.hidden) return;
     ctx.clearRect(0, 0, W, H);

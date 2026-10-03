@@ -328,7 +328,7 @@ main, .footer, .nav { position: relative; z-index: 1; }
 }
 
 /* ---------- LITE MODE (machines moins puissantes) ---------- */
-.lite .grain, .lite .fx { display: none; }
+.lite .grain { display: none; }
 .lite .nav, .lite .chip { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(10, 14, 44, .92); }
 .lite .hero__photo img { filter: none; }
 .lite .hero__ring::after { filter: none; opacity: .5; }
