@@ -177,15 +177,14 @@
   const depthEls = $$(".hero [data-depth]");
   if (hasGsap && !reduce) {
     const setters = depthEls.map((el) => ({ d: +el.dataset.depth, x: gsap.quickTo(el, "x", { duration: 1.2, ease: "power3.out" }), y: gsap.quickTo(el, "y", { duration: 1.2, ease: "power3.out" }) }));
-    const card = $("#photoCard");
+    const card = $("#heroImg");
     const rotY = gsap.quickTo(card, "rotationY", { duration: 1, ease: "power3.out" });
     const rotX = gsap.quickTo(card, "rotationX", { duration: 1, ease: "power3.out" });
     addEventListener("pointermove", (e) => {
       if (!visible(".hero")) return;
       const nx = e.clientX / innerWidth - .5, ny = e.clientY / innerHeight - .5;
       for (const s of setters) { s.x(-nx * 60 * s.d); s.y(-ny * 40 * s.d); }
-      rotY(-10 + nx * 22); rotX(4 - ny * 16);
-      card.style.setProperty("--sx", `${50 + nx * 90}%`); card.style.setProperty("--sy", `${40 + ny * 90}%`);
+      rotY(nx * 12); rotX(-ny * 6);
     });
     addEventListener("deviceorientation", (e) => {
       if (e.gamma == null) return;
@@ -272,7 +271,7 @@
       .set("#loader", { display: "none" })
       .from(".hero__ring", { scale: 0, rotate: -180, duration: 1.6, ease: "expo.out" }, "-=.6")
       .from(".hero__num", { yPercent: 60, opacity: 0, duration: 1.4, ease: "expo.out" }, "<.1")
-      .from(".photo-card", { yPercent: 30, rotateY: -50, rotateX: 20, scale: .8, opacity: 0, duration: 1.8, ease: "expo.out" }, "<.1")
+      .from("#heroImg", { yPercent: 40, scale: .85, opacity: 0, duration: 1.6, ease: "expo.out" }, "<.1")
       .from(".hero__title .char", { yPercent: 120, rotateX: -90, opacity: 0, duration: 1.2, ease: "expo.out", stagger: .045 }, "<.2")
       .from(".hero__eyebrow, .hero__sub, .hero__cta > *", { y: 30, opacity: 0, duration: .9, ease: "power3.out", stagger: .08 }, "<.3")
       .from(".chip", { scale: 0, opacity: 0, duration: 1, ease: "back.out(2)", stagger: .12 }, "<.2")
@@ -281,7 +280,7 @@
   };
 
   // loader progress — waits for the data and hero image, minimum ~1.4s for the show
-  const heroImg = $(".photo-card img");
+  const heroImg = $("#heroImg");
   const imgReady = heroImg.complete ? Promise.resolve() : new Promise((r) => { heroImg.onload = heroImg.onerror = r; });
   const minTime = new Promise((r) => setTimeout(r, reduce ? 0 : 1400));
   const prog = { v: 0 };
