@@ -39,7 +39,7 @@
   const visIO = new IntersectionObserver((entries) => {
     for (const en of entries) { onScreen.set(en.target, en.isIntersecting); en.target.classList.toggle("is-off", !en.isIntersecting); }
   });
-  $$(".hero, .feed, .marquee").forEach((el) => { onScreen.set(el, true); visIO.observe(el); });
+  $$(".hero, .feed").forEach((el) => { onScreen.set(el, true); visIO.observe(el); });
   const visible = (sel) => onScreen.get($(sel)) !== false;
 
   // ---------- helpers ----------
@@ -177,10 +177,15 @@
   const depthEls = $$(".hero [data-depth]");
   if (hasGsap && !reduce) {
     const setters = depthEls.map((el) => ({ d: +el.dataset.depth, x: gsap.quickTo(el, "x", { duration: 1.2, ease: "power3.out" }), y: gsap.quickTo(el, "y", { duration: 1.2, ease: "power3.out" }) }));
+    const card = $("#photoCard");
+    const rotY = gsap.quickTo(card, "rotationY", { duration: 1, ease: "power3.out" });
+    const rotX = gsap.quickTo(card, "rotationX", { duration: 1, ease: "power3.out" });
     addEventListener("pointermove", (e) => {
       if (!visible(".hero")) return;
       const nx = e.clientX / innerWidth - .5, ny = e.clientY / innerHeight - .5;
       for (const s of setters) { s.x(-nx * 60 * s.d); s.y(-ny * 40 * s.d); }
+      rotY(-10 + nx * 22); rotX(4 - ny * 16);
+      card.style.setProperty("--sx", `${50 + nx * 90}%`); card.style.setProperty("--sy", `${40 + ny * 90}%`);
     });
     addEventListener("deviceorientation", (e) => {
       if (e.gamma == null) return;
@@ -225,30 +230,6 @@
       .fromTo(".hero__ghost", { xPercent: 0 }, { xPercent: -25, ease: "none" }, 0)
       .fromTo(".chip", { yPercent: 0 }, { yPercent: (i) => -300 - i * 200, ease: "none" }, 0);
 
-    // marquee driven by scroll velocity
-    const track = $("#marquee");
-    track.innerHTML += track.innerHTML + track.innerHTML;
-    let w = track.scrollWidth / 3;
-    addEventListener("resize", () => { w = track.scrollWidth / 3; });
-    document.fonts?.ready.then(() => { w = track.scrollWidth / 3; });
-    const setX = gsap.quickSetter(track, "x", "px");
-    let xPos = 0, dir = -1;
-    const speed = { v: 1 };
-    gsap.ticker.add(() => {
-      if (!visible(".marquee")) return;
-      xPos += dir * speed.v * 1.2;
-      if (xPos <= -w) xPos += w;
-      if (xPos > 0) xPos -= w;
-      setX(xPos);
-    });
-    ScrollTrigger.create({
-      onUpdate: (self) => {
-        dir = self.direction === 1 ? -1 : 1;
-        speed.v = 1 + Math.min(8, Math.abs(self.getVelocity()) / 300);
-        gsap.to(speed, { v: 1, duration: 1.2, ease: "power2.out", overwrite: true, delay: .05 });
-      },
-    });
-
     // section titles: words slide up
     $$("[data-split-words]").forEach((h) => {
       gsap.from($$(".word", h), { yPercent: 110, rotate: 6, duration: 1.1, ease: "power4.out", stagger: .06, scrollTrigger: { trigger: h, start: "top 88%" } });
@@ -291,7 +272,7 @@
       .set("#loader", { display: "none" })
       .from(".hero__ring", { scale: 0, rotate: -180, duration: 1.6, ease: "expo.out" }, "-=.6")
       .from(".hero__num", { yPercent: 60, opacity: 0, duration: 1.4, ease: "expo.out" }, "<.1")
-      .from(".hero__photo img", { yPercent: 40, scale: .85, opacity: 0, duration: 1.6, ease: "expo.out" }, "<.1")
+      .from(".photo-card", { yPercent: 30, rotateY: -50, rotateX: 20, scale: .8, opacity: 0, duration: 1.8, ease: "expo.out" }, "<.1")
       .from(".hero__title .char", { yPercent: 120, rotateX: -90, opacity: 0, duration: 1.2, ease: "expo.out", stagger: .045 }, "<.2")
       .from(".hero__eyebrow, .hero__sub, .hero__cta > *", { y: 30, opacity: 0, duration: .9, ease: "power3.out", stagger: .08 }, "<.3")
       .from(".chip", { scale: 0, opacity: 0, duration: 1, ease: "back.out(2)", stagger: .12 }, "<.2")
@@ -300,7 +281,7 @@
   };
 
   // loader progress — waits for the data and hero image, minimum ~1.4s for the show
-  const heroImg = $(".hero__photo img");
+  const heroImg = $(".photo-card img");
   const imgReady = heroImg.complete ? Promise.resolve() : new Promise((r) => { heroImg.onload = heroImg.onerror = r; });
   const minTime = new Promise((r) => setTimeout(r, reduce ? 0 : 1400));
   const prog = { v: 0 };
