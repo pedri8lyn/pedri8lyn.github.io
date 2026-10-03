@@ -233,7 +233,7 @@ main, .footer, .nav { position: relative; z-index: 1; }
 @keyframes border-spin { to { --angle: 360deg; } }
 .feed__frame--ig { max-width: 560px; justify-self: center; width: 100%; }
 
-.frame__bar { display: flex; align-items: center; gap: 12px; padding: 10px 12px 14px; }
+.frame__bar { display: flex; align-items: center; gap: 12px; padding: 10px 12px 14px; text-align: left; }
 .frame__bar b { display: block; font-family: var(--display); font-size: 15px; line-height: 1.2; }
 .frame__bar small { color: var(--muted); font-size: 12px; }
 .frame__avatar {
@@ -244,9 +244,15 @@ main, .footer, .nav { position: relative; z-index: 1; }
 
 /* the official embeds, cropped so their white profile header is hidden */
 .live { position: relative; overflow: hidden; border-radius: 22px; background: #121212; min-height: 300px; }
-.live--tt { --crop: 150px; }
-.live--tt blockquote { margin-top: calc(-1 * var(--crop)) !important; }
-.live--tt iframe { display: block; width: 100% !important; border: 0; }
+/* TikTok : l'intégration est toujours rendue à 750px de large (mise en page fixe), puis réduite à la taille
+   du cadre ; on ne montre que la rangée de vignettes (x 25→737, y 181→409 dans l'iframe). */
+.live--tt { --s: 1; min-height: 0; aspect-ratio: 712 / 228; background: var(--bg-2); }
+.live--tt blockquote {
+  position: absolute !important; top: 0; left: 0; width: 750px !important; max-width: none !important; min-width: 0 !important; margin: 0 !important;
+  transform-origin: 0 0; transform: scale(var(--s)) translate(-25px, -181px);
+}
+.live--tt iframe { display: block; width: 750px !important; border: 0; }
+.live__gap { position: absolute; top: 0; bottom: 0; z-index: 2; width: 2.25%; background: var(--bg-2); pointer-events: none; }
 .live--ig { --crop: 158px; background: #000; min-height: 0; aspect-ratio: 3 / 2; }
 .live--ig iframe { display: block; width: calc(100% + 2px); margin: calc(-1 * var(--crop)) -1px 0; border: 0; height: calc(var(--crop) + 100% + 4px); }
 .live__loading {

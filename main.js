@@ -206,6 +206,8 @@
   const markReady = (box) => box.classList.add("is-ready");
   const igBox = $("#igLive"), igFrame = $("#igLive iframe");
   const ttBox = $("#ttLive");
+  // scale the fixed-width TikTok embed down to the frame's width
+  new ResizeObserver(([en]) => ttBox.style.setProperty("--s", en.contentRect.width / 712)).observe(ttBox);
   const loadInstagram = () => {
     if (igFrame.src) return;
     igFrame.addEventListener("load", () => setTimeout(() => markReady(igBox), 400), { once: true });
