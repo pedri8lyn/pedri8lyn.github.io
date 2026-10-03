@@ -231,9 +231,10 @@
 
     // section titles: words slide up
     $$("[data-split-words]").forEach((h) => {
+      if (h.closest(".about")) return;
       gsap.from($$(".word", h), { yPercent: 110, rotate: 6, duration: 1.1, ease: "power4.out", stagger: .06, scrollTrigger: { trigger: h, start: "top 88%" } });
     });
-    $$(".section .eyebrow, .about__body p, .about__links").forEach((el) => {
+    $$(".section:not(.about) .eyebrow").forEach((el) => {
       gsap.from(el, { y: 30, opacity: 0, duration: 1, ease: "power3.out", scrollTrigger: { trigger: el, start: "top 92%" } });
     });
 
@@ -249,7 +250,11 @@
     $$(".h2--big").forEach((h) => gsap.fromTo(h, { scale: .8, letterSpacing: "0em" }, { scale: 1, letterSpacing: "-0.05em", ease: "none", scrollTrigger: { trigger: h, start: "top bottom", end: "top 40%", scrub: true } }));
 
     // about card
-    gsap.from(".about__card", { y: 120, rotateX: 18, opacity: 0, duration: 1.4, ease: "power4.out", transformPerspective: 1200, scrollTrigger: { trigger: ".about", start: "top 80%" } });
+    // one timeline, one trigger: the card rises, then its content — nothing fights over the same element
+    gsap.timeline({ scrollTrigger: { trigger: ".about", start: "top 85%", once: true } })
+      .fromTo(".about__card", { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 1.1, ease: "power3.out", clearProps: "transform,opacity" })
+      .from(".about .word", { yPercent: 110, duration: .9, ease: "power4.out", stagger: .06 }, "-=.7")
+      .from(".about__body .eyebrow, .about__body p, .about__links", { y: 24, opacity: 0, duration: .8, ease: "power3.out", stagger: .08 }, "-=.7");
     gsap.fromTo(".about__photo img", { yPercent: -12 }, { yPercent: 0, ease: "none", scrollTrigger: { trigger: ".about", scrub: true } });
 
     // footer letters wave
